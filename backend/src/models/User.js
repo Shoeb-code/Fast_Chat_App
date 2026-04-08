@@ -19,6 +19,15 @@ const userSchecma = new mongoose.Schema({
     minlength: 6,
    },
 
+   photo:{
+    type:String,
+    default:"",
+   },
+   
+   status:{
+    type:String,
+    default:""
+   },
    refreshToken :{
     type:String,
     default:null,
@@ -30,6 +39,6 @@ const userSchecma = new mongoose.Schema({
    },
 },{timestamps:true});
 
-const User =mongoose.model('user',userSchecma);
+const User =mongoose.model('User',userSchecma);
 
 export default User;

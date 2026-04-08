@@ -1,41 +1,51 @@
+import jwt from "jsonwebtoken";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateTokens.js";
 
-import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens";
-import User from "../models/User";
-import jwt from 'jsonwebtoken';
+export const refreshToken = async (req, res) => {
+  try {
+    const token = req.cookies.refreshToken;
 
-export const refreshTokenController= async (req,res)=>{
-
-    const {refreshToken} =req.body;
-    if(!refreshToken){
-        return res.status(401).json({success:false,message:"refresh token missing"})
-    }
-    try {
-           const decoded =jwt.verify(refreshToken,process.env.REFRESH_SECRET);
-
-           const user= await User.findById(decoded.id);
-
-           if(!user || user.refreshToken !==refreshToken){
-             return res.status(403).json({
-                message: "Invalid refresh token",
-              });
-           }
-
-           // rotation 
-           const newAccessToken =generateAccessToken(user._id);
-           const newRefreshToken =generateRefreshToken(user._id);
-
-           user.refreshToken=newRefreshToken;
-           await user.save()
-
-           return res.json({
-            accessToken:newAccessToken,
-            refreshToken :newRefreshToken,
-           });
-
-    } catch (error) {
-        return res.status(403).json({
-            message: "Token expired or invalid",
-          });
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
     }
 
-}
+    const decoded = jwt.verify(
+      token,
+      process.env.REFRESH_SECRET
+    );
+
+    const newAccessToken =
+      generateAccessToken(decoded.id);
+
+    const newRefreshToken =
+      generateRefreshToken(decoded.id);
+
+    res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge:
+          7 * 24 * 60 * 60 * 1000,
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid refresh token",
+    });
+  }
+};

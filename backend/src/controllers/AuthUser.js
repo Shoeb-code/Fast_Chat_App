@@ -1,18 +1,21 @@
 
 import express from "express"
-import User from "../models/User";
+import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
-import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens";
+import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens.js";
+
 
 // Register Function
- export const Register = async(req,res)=>{
+ export const register = async(req,res)=>{
        const {email,name,password}=req.body;
+       console.log(req.body)
 
        if(!email || !name || !password){
           return res.status(400).json({success:false, message:"Credentials Missing"});
        }
     try {
             const isEmailRegister= await User.findOne({email});
+
             if(isEmailRegister){
                  return res.status(409).json({success:false,message:" Email already Register"})
             }
@@ -21,12 +24,19 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
           const user = await User.create(
             {  email,
                fullname:name,
-               password:hashedPassword
+               password:hashedPassword,
             }
             );
 
             const refreshToken = generateRefreshToken(user._id);
             const accessToken =generateAccessToken(user._id);
+
+            res.cookie('refreshToken',refreshToken,{
+               httpOnly:true,
+               secure:false,
+               sameSite:'lax',
+               maxAge: 7 * 24 * 60 * 60 * 1000,
+            })
 
             user.refreshToken=refreshToken;
             await user.save();
@@ -34,7 +44,6 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
           return res.status(201).json({
             success: true,
             accessToken,
-            refreshToken,
             message: "User registered successfully"
          });
 
@@ -44,42 +53,83 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
     }
 }
 
-// logout 
 
-export const logout =async (req,res)=>{
+//login 
+ export const login =async(req,res)=>{
+  try {
+        const {email,password}=req.body;
 
-   try {
-      const {email} =req.body;
+         console.log("Login Info: ",req.body)
 
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required",
-        });
-      }
+        if(!email || !password){
+          return res.status(400).json({success:false, message:"email and password required"})
+        }
+        const user=await User.findOne({email});
+
+        if(!user){
+          return res.status(404).json({success:false, message:"User not Registered"})
+        }
+
+        const hashedPassword = await bcrypt.compare(password,user.password);
+       
+        if(!hashedPassword){
+          return res.status(401).json({success:false, message:"Invalid Credentials"});
+        }
+
+        const refreshToken = generateRefreshToken(user._id);
+        const accessToken=generateAccessToken(user._id)
   
-      const user= await User.findOne({email});
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-        });
-      }
+      user.refreshToken = refreshToken;
   
-      user.refreshToken=null;
       await user.save();
-  
-      return res.json({
+
+      res.cookie(
+        "refreshToken",
+        refreshToken,
+        {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          maxAge:
+            7 * 24 * 60 * 60 * 1000,
+        }
+      );
+
+      return res.status(200).json({
         success: true,
-        message: "Logged out",
+        message: "User login successfully",
+        accessToken,
+        user
       });
 
-   } catch (error) {
-      return res.status(500).json({
-         success: false,
-         message: error.message,
-       });
-   }
+  } catch (error) {
+       return res.status().json({success:false,error})
+  }
+ }
+
+
+
+
+
+// logout 
+
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    await User.findByIdAndUpdate(userId, {
+      refreshToken: null
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully"
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Logout failed"
+    })
+  }
 }
 

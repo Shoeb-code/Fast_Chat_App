@@ -1,13 +1,26 @@
-import express from "express";
+
+import express from "express"
+
+
 import { protectUser } from "../middleware/authMiddleware.js";
-import { getMessages } from "../controllers/chatController.js";
+import { getMessages, markMessagesAsSeen, sendMessage } from "../controllers/messageController.js";
 
-const router = express.Router();
+ export const messageRouter =express.Router();
 
-router.get(
-  "/messages"
-  ,protectUser,
-  getMessages
-);
+messageRouter.post(
+    "/send",
+    protectUser,
+    sendMessage
+  );
+  
+  messageRouter.get(
+    "/:userId",
+    protectUser,
+    getMessages
+  );
 
-export default router;
+  messageRouter.put(
+    "/seen/:senderId",
+    protectUser,
+    markMessagesAsSeen
+  )

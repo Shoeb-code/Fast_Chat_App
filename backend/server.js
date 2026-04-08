@@ -1,17 +1,17 @@
-import app from '../backend/src/app.js'
-import {configDotenv} from 'dotenv';
-import { connectDB } from './src/config/db.js';
+import http from "http";
+import app from "./src/app.js";
+import dotenv from "dotenv";
+import { initializeSocket } from "./src/sockets/index.js";
 
+dotenv.config();
 
- configDotenv();
- connectDB();
+const server = http.createServer(app);
 
- const PORT =process.env.PORT || 4000
+// socket initialization
+initializeSocket(server);
 
- app.listen(PORT,()=>{
-    console.log(`server listen on http://localhost:${PORT}`)
- }
-)
+const PORT = process.env.PORT || 4000;
 
-
-
+server.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
+});

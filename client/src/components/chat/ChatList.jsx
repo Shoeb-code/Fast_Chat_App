@@ -1,0 +1,215 @@
+import React, { useEffect, useMemo, useState } from 'react'
+import {
+  EllipsisVertical,
+  Search,
+  X,
+  MessageCircle
+} from 'lucide-react'
+
+import { useChat } from '../../context/ChatContext.jsx'
+import axios from '../../api/axiosConfig.js'
+import EditProfile from '../common/EditProfile.jsx'
+
+function ChatList() {
+  const { setSelectedUser, selectedUser } = useChat()
+
+  const [users, setUsers] = useState([])
+  const [showDrawer, setShowDrawer] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+
+      const { data } = await axios.get('/auth/users')
+
+      if (data.success) {
+        setUsers(data.users)
+      }
+    } catch (error) {
+      console.error('Failed to fetch users', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUser = (user) => {
+    setSelectedUser(user)
+  }
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) =>
+      u.fullname
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+  }, [users, searchTerm])
+
+  return (
+    <div className='relative w-[26%] h-screen bg-gray-950 border-r border-gray-800 flex flex-col shadow-xl'>
+      
+      {/* Header */}
+      <div className='sticky top-0 z-20 bg-gray-950 border-b border-gray-800 px-5 py-4'>
+        <div className='flex justify-between items-center text-white'>
+          <div>
+            <h1 className='text-2xl font-bold tracking-tight'>
+              Fast
+              <span className='text-violet-500'>Chat</span>
+            </h1>
+            <p className='text-xs text-gray-400 mt-1'>
+              Conversations
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowDrawer(true)}
+            className='p-2 rounded-xl hover:bg-gray-800 transition-all'
+          >
+            <EllipsisVertical size={20} />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className='mt-4 flex items-center gap-3 border border-gray-800 px-4 py-3 rounded-2xl bg-gray-900/80 backdrop-blur-md'>
+          <Search
+            size={18}
+            className='text-gray-400'
+          />
+
+          <input
+            type='text'
+            placeholder='Search users...'
+            value={searchTerm}
+            onChange={(e) =>
+              setSearchTerm(e.target.value)
+            }
+            className='w-full bg-transparent outline-none text-white placeholder:text-gray-500'
+          />
+        </div>
+      </div>
+
+      {/* User List */}
+      <div className='flex-1 overflow-y-auto px-3 py-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-700'>
+        
+        {loading ? (
+          [...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className='animate-pulse flex items-center gap-3 p-3 rounded-2xl bg-gray-900'
+            >
+              <div className='w-10 h-10 rounded-full bg-gray-800'></div>
+              <div className='flex-1'>
+                <div className='h-4 bg-gray-800 rounded w-2/3 mb-2'></div>
+                <div className='h-3 bg-gray-800 rounded w-1/3'></div>
+              </div>
+            </div>
+          ))
+        ) : filteredUsers.length > 0 ? (
+          filteredUsers.map((u) => (
+            <div
+              key={u._id}
+              onClick={() => handleUser(u)}
+              className={`
+                group flex items-center gap-3 p-3 rounded-2xl cursor-pointer
+                border transition-all duration-300
+                ${
+                  selectedUser?._id === u._id
+                    ? 'bg-gradient-to-r from-violet-900/40 to-gray-900 border-violet-500 shadow-lg'
+                    : 'bg-gray-900 border-gray-800 hover:bg-gray-800 hover:border-violet-400'
+                }
+              `}
+            >
+              <div className='relative'>
+                <img
+                  src={
+                    u.photo ||
+                    `https://ui-avatars.com/api/?name=${u.fullname}`
+                  }
+                  alt={u.fullname}
+                  className='w-11 h-11 rounded-full object-cover border border-gray-700'
+                />
+
+                <span
+                  className={`
+                    absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-gray-950
+                    ${
+                      u.isOnline
+                        ? 'bg-green-500'
+                        : 'bg-gray-500'
+                    }
+                  `}
+                />
+              </div>
+
+              <div className='flex-1 min-w-0'>
+                <h2 className='text-white font-medium truncate'>
+                  {u.fullname}
+                </h2>
+
+                <p className='text-sm text-gray-400'>
+                  {u.isOnline
+                    ? 'Online'
+                    : 'Offline'}
+                </p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className='h-full flex flex-col items-center justify-center text-gray-500'>
+            <MessageCircle size={40} />
+            <p className='mt-3 text-sm'>
+              No users found
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Backdrop */}
+      {showDrawer && (
+        <div
+          className='fixed inset-0 bg-black/60 backdrop-blur-md z-40'
+          onClick={() => setShowDrawer(false)}
+        />
+      )}
+
+      {/* Premium Drawer */}
+      <div
+        className={`
+          fixed top-0 right-0 h-screen w-[440px]
+          bg-gray-950 border-l border-gray-800
+          shadow-2xl z-50
+          transform transition-transform duration-300 ease-in-out
+          ${showDrawer ? 'translate-x-0' : 'translate-x-full'}
+        `}
+      >
+        {/* Drawer Header */}
+        <div className='sticky top-0 z-10 flex justify-between items-center px-5 py-4 border-b border-gray-800 bg-gray-950'>
+          <h2 className='text-xl font-semibold text-white'>
+            Edit Profile
+          </h2>
+
+          <button
+            onClick={() => setShowDrawer(false)}
+            className='p-2 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition-all'
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Drawer Content */}
+        <div className='p-5 overflow-y-auto h-[calc(100%-72px)]'>
+          <EditProfile
+            onClose={() => setShowDrawer(false)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ChatList
