@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { registerSocketHandlers } from "./socketHandlers.js";
 
 export const initializeSocket = (server) => {
+
   const io = new Server(server, {
     cors: {
       origin: "http://localhost:5173",
@@ -10,8 +11,7 @@ export const initializeSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
+    console.log(" a new user is connected. i.e Socket connected:",socket.id);
     registerSocketHandlers(io, socket);
   });
 

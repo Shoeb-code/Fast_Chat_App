@@ -6,7 +6,7 @@ import Message from "../models/Message.js";
 // ===============================
 export const sendMessage = async (req, res) => {
   try {
-    const { receiverId, content } = req.body;
+    const {receiverId,content} = req.body;
     const senderId = req.user._id;
 
     // validation
@@ -48,10 +48,7 @@ export const sendMessage = async (req, res) => {
 // ===============================
 // Get Messages (2-way chat)
 // ===============================
-export const getMessages = async (
-  req,
-  res
-) => {
+export const getMessages = async (req,res) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.user._id;
@@ -75,16 +72,7 @@ export const getMessages = async (
           receiver: currentUserId,
         },
       ],
-    })
-      .populate(
-        "sender",
-        "fullname email photo"
-      )
-      .populate(
-        "receiver",
-        "fullname email photo"
-      )
-      .sort({ createdAt: 1 });
+    }).populate("sender", "fullname email photo").populate("receiver","fullname email photo").sort({ createdAt: 1 });
 
     return res.status(200).json({
       success: true,
