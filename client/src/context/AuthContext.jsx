@@ -96,47 +96,20 @@ export const AuthProvider = ({
   // ========================
   // Register
   // ========================
-  const register =
-    async (formData) => {
+  const register = async (formData) => {
       try {
-        const { data } =
-          await axios.post(
-            "/auth/register",
-            formData
-          );
+        const { data } =  await axios.post("/auth/register", formData);
 
-        console.log(
-          "REGISTER RESPONSE:",
-          data
-        );
-
-        if (
-          data.success &&
-          data.user
-        ) {
-          localStorage.setItem(
-            "accessToken",
-            data.accessToken
-          );
-
-          localStorage.setItem(
-            "user",
-            JSON.stringify(
-              data.user
-            )
-          );
-
+        if ( data.success && data.user) {
+          localStorage.setItem("accessToken",data.accessToken);
+          localStorage.setItem("user",JSON.stringify(data.user));
           setUser(data.user);
-
-          return {
-            success: true,
-          };
+          return {success: true};
         }
 
         return {
           success: false,
-          message:
-            "Invalid register response",
+          message:"Invalid register response",
         };
       } catch (error) {
         return {
