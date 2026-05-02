@@ -7,9 +7,9 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
 
 // Register Function
  export const register = async(req,res)=>{
-       const {email,name,password}=req.body;
-       console.log(req.body)
 
+       const {email,name,password}=req.body;
+       
        if(!email || !name || !password){
           return res.status(400).json({success:false, message:"Credentials Missing"});
        }
@@ -42,9 +42,10 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
             await user.save();
 
           return res.status(201).json({
-            success: true,
+            success:true,
             accessToken,
-            message: "User registered successfully"
+            user,
+            message:"User registered successfully"
          });
 
     } catch (error) {
@@ -59,7 +60,7 @@ import { generateAccessToken,generateRefreshToken} from "../utils/generateTokens
   try {
         const {email,password}=req.body;
 
-         console.log("Login Info: ",req.body)
+         
 
         if(!email || !password){
           return res.status(400).json({success:false, message:"email and password required"})
